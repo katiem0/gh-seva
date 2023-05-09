@@ -1,49 +1,44 @@
 package data
 
-import (
-	"fmt"
-	"io"
-	"log"
-)
+import "time"
 
-func (g *APIGetter) GetOrgActionVariables(owner string) ([]byte, error) {
-	url := fmt.Sprintf("orgs/%s/actions/variables", owner)
-
-	resp, err := g.restClient.Request("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return responseData, err
+type CreateOrgVariable struct {
+	Name             string `json:"name"`
+	Value            string `json:"value"`
+	Visibility       string `json:"visibility"`
+	SelectedReposIDs []int  `json:"selected_repository_ids"`
 }
 
-func (g *APIGetter) GetRepoActionVariables(owner string, repo string) ([]byte, error) {
-	url := fmt.Sprintf("repos/%s/%s/actions/variables", owner, repo)
-
-	resp, err := g.restClient.Request("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return responseData, err
+type CreateVariableAll struct {
+	Name       string `json:"name"`
+	Value      string `json:"value"`
+	Visibility string `json:"visibility"`
 }
 
-func (g *APIGetter) GetScopedOrgActionVariables(owner string, secret string) ([]byte, error) {
-	url := fmt.Sprintf("orgs/%s/actions/variables/%s/repositories", owner, secret)
+type CreateRepoVariable struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
 
-	resp, err := g.restClient.Request("GET", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return responseData, err
+type ImportedVariable struct {
+	Level            string
+	Name             string `json:"name"`
+	Value            string `json:"value"`
+	Visibility       string `json:"visibility"`
+	SelectedRepos    []string
+	SelectedReposIDs []string `json:"selected_repository_ids"`
+}
+
+type Variable struct {
+	Name          string    `json:"name"`
+	Value         string    `json:"value"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	Visibility    string    `json:"visibility"`
+	SelectedRepos string    `json:"selected_repositories_url"`
+}
+
+type VariableResponse struct {
+	TotalCount int        `json:"total_count"`
+	Variables  []Variable `json:"variables"`
 }

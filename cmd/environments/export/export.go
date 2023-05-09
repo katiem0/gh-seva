@@ -1,4 +1,4 @@
-package exportvars
+package exportenvs
 
 import (
 	"encoding/csv"
@@ -16,11 +16,13 @@ import (
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
+	"github.com/katiem0/gh-seva/internal/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 type cmdFlags struct {
+	app        string
 	hostname   string
 	token      string
 	reportFile string
@@ -34,14 +36,13 @@ func NewCmdExport() *cobra.Command {
 
 	exportCmd := cobra.Command{
 		Use:   "export [flags] <organization> [repo ...] ",
-		Short: "Generate a report of Actions variables for an organization and/or repositories.",
-		Long:  "Generate a report of Actions variables for an organization and/or repositories.",
+		Short: "Generate a report of environments and metadata.",
+		Long:  "Generate a report of environments and metadata for a single repository or all repositories in an organization.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(exportCmd *cobra.Command, args []string) error {
 			var err error
 			var gqlClient api.GQLClient
 			var restClient api.RESTClient
-
 			// Reinitialize logging if debugging was enabled
 			if cmdFlags.debug {
 				logger, _ := log.NewLogger(cmdFlags.debug)
@@ -95,13 +96,15 @@ func NewCmdExport() *cobra.Command {
 				return err
 			}
 
-			return runCmdExport(owner, repos, &cmdFlags, data.NewAPIGetter(gqlClient, restClient), reportWriter)
+			return runCmdExport(owner, repos, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
 		},
 	}
 
 	// Determine default report file based on current timestamp; for more info see https://pkg.go.dev/time#pkg-constants
 	reportFileDefault := fmt.Sprintf("report-%s.csv", time.Now().Format("20060102150405"))
+
 	// Configure flags for command
+
 	exportCmd.PersistentFlags().StringVarP(&cmdFlags.token, "token", "t", "", `GitHub Personal Access Token (default "gh auth token")`)
 	exportCmd.PersistentFlags().StringVarP(&cmdFlags.hostname, "hostname", "", "github.com", "GitHub Enterprise Server hostname")
 	exportCmd.Flags().StringVarP(&cmdFlags.reportFile, "output-file", "o", reportFileDefault, "Name of file to write CSV report")
@@ -111,23 +114,31 @@ func NewCmdExport() *cobra.Command {
 	return &exportCmd
 }
 
-func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIGetter, reportWriter io.Writer) error {
+func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.APIGetter, reportWriter io.Writer) error {
 	var reposCursor *string
 	var allRepos []data.RepoInfo
 
 	csvWriter := csv.NewWriter(reportWriter)
 
 	err := csvWriter.Write([]string{
-		"VariableLevel",
-		"VariableName",
-		"VariableValue",
-		"VariableAccess",
-		"RepositoryNames",
-		"RepositoryIDs",
+		"RepositoryName",
+		"RepositoryID",
+		"EnvironmentName",
+		"AdminBypass",
+		"WaitTimer",
+		"Reviewers",
+		"ProtectedBranches",
+		"CustomBranchPolicies",
+		"SecretsTotalCount",
+		"SecretsList",
+		"VariablesTotalCount",
+		"VariablesList",
 	})
+
 	if err != nil {
-		return err
+		zap.S().Error("Error raised in writing output", zap.Error(err))
 	}
+
 	if len(repos) > 0 {
 		zap.S().Infof("Processing repos: %s", repos)
 
@@ -137,7 +148,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 
 			repoQuery, err := g.GetRepo(owner, repo)
 			if err != nil {
-				return err
+				zap.S().Error("Error raised in gathering repo", zap.Error(err))
 			}
 			allRepos = append(allRepos, repoQuery.Repository)
 		}
@@ -149,7 +160,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 			reposQuery, err := g.GetReposList(owner, reposCursor)
 
 			if err != nil {
-				return err
+				zap.S().Error("Error raised in gathering repos", zap.Error(err))
 			}
 
 			allRepos = append(allRepos, reposQuery.Organization.Repositories.Nodes...)
@@ -161,116 +172,64 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 			}
 		}
 	}
-	// Writing to CSV Org level Actions Variables
-	if len(repos) == 0 {
-		zap.S().Debugf("Gathering ORganization level Actions Variables for %s", owner)
-		orgVariables, err := g.GetOrgActionVariables(owner)
+	// Gathering Envs for each repository listed
+
+	zap.S().Debug("Gathering all repository environments")
+	for _, singleRepo := range allRepos {
+		zap.S().Debugf("Gathering Environments for repo %s", singleRepo.Name)
+		repoEnvs, err := g.GetRepoEnvironments(owner, singleRepo.Name)
 		if err != nil {
-			return err
+			zap.S().Error("Error raised in writing output", zap.Error(err))
 		}
-		var oActionResponseObject data.VariableResponse
-		err = json.Unmarshal(orgVariables, &oActionResponseObject)
+		var responseEnvs data.EnvResponse
+		err = json.Unmarshal(repoEnvs, &responseEnvs)
 		if err != nil {
 			return err
 		}
 
-		for _, orgVariable := range oActionResponseObject.Variables {
-			if orgVariable.Visibility == "selected" {
-				zap.S().Debugf("Gathering Actions Variables for %s that are scoped to specific repositories", owner)
-				scoped_repo, err := g.GetScopedOrgActionVariables(owner, orgVariable.Name)
-				if err != nil {
-					zap.S().Error("Error raised in writing output", zap.Error(err))
-				}
-				var responseOObject data.ScopedVariableResponse
-				err = json.Unmarshal(scoped_repo, &responseOObject)
-				if err != nil {
-					return err
-				}
-				var concatRepos []string
-				var concatRepoIds []string
-				for _, scopeVariable := range responseOObject.Repositories {
-					concatRepos = append(concatRepos, scopeVariable.Name)
-					stringRepoId := strconv.Itoa(scopeVariable.ID)
-					concatRepoIds = append(concatRepoIds, stringRepoId)
-				}
-				err = csvWriter.Write([]string{
-					"Organization",
-					orgVariable.Name,
-					orgVariable.Value,
-					orgVariable.Visibility,
-					strings.Join(concatRepos, ";"),
-					strings.Join(concatRepoIds, ";"),
-				})
-				if err != nil {
-					zap.S().Error("Error raised in writing output", zap.Error(err))
-				}
-			} else if orgVariable.Visibility == "private" {
-				zap.S().Debugf("Gathering Actions Variables %s for %s that is accessible to all internal and private repositories.", orgVariable.Name, owner)
-				var concatRepos []string
-				var concatRepoIds []string
-				for _, repoActPrivateVars := range allRepos {
-					if repoActPrivateVars.Visibility != "public" {
-						concatRepos = append(concatRepos, repoActPrivateVars.Name)
-						stringRepoId := strconv.Itoa(repoActPrivateVars.DatabaseId)
-						concatRepoIds = append(concatRepoIds, stringRepoId)
+		zap.S().Debugf("Writing data for %d environment(s) to output for repository %s", responseEnvs.TotalCount, singleRepo.Name)
+		for _, env := range responseEnvs.Environments {
+			var waitTimer int
+			var Reviewers []string
+			for _, rules := range env.ProtectionRules {
+				if rules.Type == "wait_timer" {
+					waitTimer = rules.WaitTimer
+
+				} else if rules.Type == "required_reviewers" {
+					for _, reviewer := range rules.Reviewers {
+						var reviewList []string
+						reviewList = append(reviewList, reviewer.Type)
+						reviewList = append(reviewList, reviewer.Reviewer.Login)
+						reviewList = append(reviewList, strconv.Itoa(reviewer.Reviewer.ID))
+						reviewLists := strings.Join(reviewList, ";")
+						Reviewers = append(Reviewers, reviewLists)
+
 					}
-				}
-				err = csvWriter.Write([]string{
-					"Organization",
-					orgVariable.Name,
-					orgVariable.Value,
-					orgVariable.Visibility,
-					strings.Join(concatRepos, ";"),
-					strings.Join(concatRepoIds, ";"),
-				})
-				if err != nil {
-					zap.S().Error("Error raised in writing output", zap.Error(err))
-				}
-			} else {
-				zap.S().Debugf("Gathering public Actions Secret %s for %s", orgVariable.Name, owner)
-				err = csvWriter.Write([]string{
-					"Organization",
-					orgVariable.Name,
-					orgVariable.Value,
-					orgVariable.Visibility,
-					"",
-					"",
-				})
-				if err != nil {
-					zap.S().Error("Error raised in writing output", zap.Error(err))
+					fmt.Println(strings.Join(Reviewers, "|"))
+				} else if rules.Type == "branch_policy" {
+
 				}
 			}
-		}
-	}
 
-	// Writing to CSV repository level Variables
-	for _, singleRepo := range allRepos {
-		// Writing to CSV repository level Actions Variables
-		repoActionVariablesList, err := g.GetRepoActionVariables(owner, singleRepo.Name)
-		if err != nil {
-			return err
-		}
-		var repoActionResponseObject data.VariableResponse
-		err = json.Unmarshal(repoActionVariablesList, &repoActionResponseObject)
-		if err != nil {
-			return err
-		}
-		for _, repoActionsVars := range repoActionResponseObject.Variables {
+			if err != nil {
+				zap.S().Error("Error raised in writing output", zap.Error(err))
+			}
 			err = csvWriter.Write([]string{
-				"Repository",
-				repoActionsVars.Name,
-				repoActionsVars.Value,
-				"RepoOnly",
 				singleRepo.Name,
 				strconv.Itoa(singleRepo.DatabaseId),
+				env.Name,
+				strconv.FormatBool(env.AdminByPass),
+				strconv.Itoa(waitTimer),
+				fmt.Sprintf(strings.Join(Reviewers, "|")),
 			})
+
 			if err != nil {
 				zap.S().Error("Error raised in writing output", zap.Error(err))
 			}
 		}
 	}
-
 	csvWriter.Flush()
-	fmt.Printf("Successfully exported variables for %s", owner)
+	fmt.Printf("Successfully exported environment data to csv %s", cmdFlags.reportFile)
+
 	return nil
 }

@@ -1,4 +1,4 @@
-package data
+package utils
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func (g *APIGetter) GetOrgCodespacesSecrets(owner string) ([]byte, error) {
-	url := fmt.Sprintf("orgs/%s/codespaces/secrets", owner)
+func (g *APIGetter) GetOrgDependabotSecrets(owner string) ([]byte, error) {
+	url := fmt.Sprintf("orgs/%s/dependabot/secrets", owner)
 
 	resp, err := g.restClient.Request("GET", url, nil)
 	if err != nil {
@@ -22,8 +22,8 @@ func (g *APIGetter) GetOrgCodespacesSecrets(owner string) ([]byte, error) {
 	return responseData, err
 }
 
-func (g *APIGetter) GetRepoCodespacesSecrets(owner string, repo string) ([]byte, error) {
-	url := fmt.Sprintf("repos/%s/%s/codespaces/secrets", owner, repo)
+func (g *APIGetter) GetRepoDependabotSecrets(owner string, repo string) ([]byte, error) {
+	url := fmt.Sprintf("repos/%s/%s/dependabot/secrets", owner, repo)
 
 	resp, err := g.restClient.Request("GET", url, nil)
 	if err != nil {
@@ -36,8 +36,8 @@ func (g *APIGetter) GetRepoCodespacesSecrets(owner string, repo string) ([]byte,
 	return responseData, err
 }
 
-func (g *APIGetter) GetScopedOrgCodespacesSecrets(owner string, secret string) ([]byte, error) {
-	url := fmt.Sprintf("orgs/%s/codespaces/secrets/%s/repositories", owner, secret)
+func (g *APIGetter) GetScopedOrgDependabotSecrets(owner string, secret string) ([]byte, error) {
+	url := fmt.Sprintf("orgs/%s/dependabot/secrets/%s/repositories", owner, secret)
 
 	resp, err := g.restClient.Request("GET", url, nil)
 	if err != nil {
@@ -50,8 +50,8 @@ func (g *APIGetter) GetScopedOrgCodespacesSecrets(owner string, secret string) (
 	return responseData, err
 }
 
-func (g *APIGetter) GetOrgCodespacesPublicKey(owner string) ([]byte, error) {
-	url := fmt.Sprintf("orgs/%s/codespaces/secrets/public-key", owner)
+func (g *APIGetter) GetOrgDependabotPublicKey(owner string) ([]byte, error) {
+	url := fmt.Sprintf("orgs/%s/dependabot/secrets/public-key", owner)
 	zap.S().Debugf("Getting public-key for %v", url)
 	resp, err := g.restClient.Request("GET", url, nil)
 	if err != nil {
@@ -65,8 +65,8 @@ func (g *APIGetter) GetOrgCodespacesPublicKey(owner string) ([]byte, error) {
 	return responseData, err
 }
 
-func (g *APIGetter) GetRepoCodespacesPublicKey(owner string, repo string) ([]byte, error) {
-	url := fmt.Sprintf("repos/%s/%s/codespaces/secrets/public-key", owner, repo)
+func (g *APIGetter) GetRepoDependabotPublicKey(owner string, repo string) ([]byte, error) {
+	url := fmt.Sprintf("repos/%s/%s/dependabot/secrets/public-key", owner, repo)
 	zap.S().Debugf("Getting public-key for %v", url)
 	resp, err := g.restClient.Request("GET", url, nil)
 	if err != nil {
@@ -80,8 +80,8 @@ func (g *APIGetter) GetRepoCodespacesPublicKey(owner string, repo string) ([]byt
 	return responseData, err
 }
 
-func (g *APIGetter) CreateOrgCodespacesSecret(owner string, secret string, data io.Reader) error {
-	url := fmt.Sprintf("orgs/%s/codespaces/secrets/%s", owner, secret)
+func (g *APIGetter) CreateOrgDependabotSecret(owner string, secret string, data io.Reader) error {
+	url := fmt.Sprintf("orgs/%s/dependabot/secrets/%s", owner, secret)
 
 	resp, err := g.restClient.Request("PUT", url, data)
 	if err != nil {
@@ -91,8 +91,8 @@ func (g *APIGetter) CreateOrgCodespacesSecret(owner string, secret string, data 
 	return err
 }
 
-func (g *APIGetter) CreateRepoCodespacesSecret(owner string, repo string, secret string, data io.Reader) error {
-	url := fmt.Sprintf("repos/%s/%s/codespaces/secrets/%s", owner, repo, secret)
+func (g *APIGetter) CreateRepoDependabotSecret(owner string, repo string, secret string, data io.Reader) error {
+	url := fmt.Sprintf("repos/%s/%s/dependabot/secrets/%s", owner, repo, secret)
 
 	resp, err := g.restClient.Request("PUT", url, data)
 	if err != nil {
