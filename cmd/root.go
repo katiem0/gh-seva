@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	envsCmd "github.com/katiem0/gh-seva/cmd/environments"
 	secretsCmd "github.com/katiem0/gh-seva/cmd/secrets"
 	variablesCmd "github.com/katiem0/gh-seva/cmd/variables"
 	"github.com/spf13/cobra"
@@ -18,7 +17,6 @@ func NewCmdRoot() *cobra.Command {
 
 	cmdRoot.AddCommand(secretsCmd.NewCmdSecrets())
 	cmdRoot.AddCommand(variablesCmd.NewCmdVariables())
-	cmdRoot.AddCommand(envsCmd.NewCmdEnvs())
 	cmdRoot.CompletionOptions.DisableDefaultCmd = true
 	cmdRoot.SetHelpCommand(&cobra.Command{
 		Use:    "no-help",
