@@ -37,7 +37,6 @@ type Getter interface {
 	GetOrgActionVariables(owner string) ([]byte, error)
 	GetRepoActionVariables(owner string, repo string) ([]byte, error)
 	GetScopedOrgActionVariables(owner string, secret string) ([]byte, error)
-	GetRepoEnvironments(owner string, repo string) ([]byte, error)
 }
 
 type APIGetter struct {
