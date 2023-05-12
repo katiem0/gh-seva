@@ -154,17 +154,21 @@ Organization level variables can be created from a `csv` file using `--from-file
 * If specifying a Source Organization (`--source-organization`) to retrieve secrets and create under a new Org, the `--source-token` is required.
 
 ```sh
-$ gh seva secrets create -h
-Create Actions, Dependabot, and/or Codespaces secrets for an organization and/or repositories from a file.
+$ gh seva variables create -h
+
+Create Organization Actions variables for a specified organization or organization and repositories level variables from a file.
 
 Usage:
-  seva secrets create <organization> [flags]
+  seva variables create <organization> [flags]
 
 Flags:
-  -d, --debug              To debug logging
-  -f, --from-file string   Path and Name of CSV file to create webhooks from (required)
-      --hostname string    GitHub Enterprise Server hostname (default "github.com")
-  -t, --token string       GitHub personal access token for organization to write to (default "gh auth token")
+  -d, --debug                        To debug logging
+  -f, --from-file string             Path and Name of CSV file to create variables from
+      --hostname string              GitHub Enterprise Server hostname (default "github.com")
+      --source-hostname string       GitHub Enterprise Server hostname where variables are copied from (default "github.com")
+  -o, --source-organization string   Name of the Source Organization to copy variables from (Requires --source-token)
+  -s, --source-token string          GitHub personal access token for Source Organization (Required for --source-organization)
+  -t, --token string                 GitHub personal access token for organization to write to (default "gh auth token")
 
 Global Flags:
       --help   Show help for command
