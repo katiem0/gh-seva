@@ -1,4 +1,4 @@
-package secrets
+package createsecrets
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
+	"github.com/katiem0/gh-seva/internal/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -80,21 +81,21 @@ func NewCmdCreate() *cobra.Command {
 
 			owner := args[0]
 
-			return runCmdCreate(owner, &cmdFlags, data.NewAPIGetter(gqlClient, restClient))
+			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient))
 		},
 	}
 
 	// Configure flags for command
 	createCmd.PersistentFlags().StringVarP(&cmdFlags.token, "token", "t", "", `GitHub personal access token for organization to write to (default "gh auth token")`)
 	createCmd.PersistentFlags().StringVarP(&cmdFlags.hostname, "hostname", "", "github.com", "GitHub Enterprise Server hostname")
-	createCmd.Flags().StringVarP(&cmdFlags.fileName, "from-file", "f", "", "Path and Name of CSV file to create webhooks from (required)")
+	createCmd.Flags().StringVarP(&cmdFlags.fileName, "from-file", "f", "", "Path and Name of CSV file to create secrets from (required)")
 	createCmd.PersistentFlags().BoolVarP(&cmdFlags.debug, "debug", "d", false, "To debug logging")
 	createCmd.MarkFlagRequired("from-file")
 
 	return &createCmd
 }
 
-func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
+func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 	var secretData [][]string
 	var importSecretList []data.ImportedSecret
 	if len(cmdFlags.fileName) > 0 {
@@ -136,7 +137,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 					return err
 				}
 				zap.S().Debugf("Creating Organization Actions Secret Data for %s", importSecret.Name)
-				orgSecretObject := data.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+				orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(orgSecretObject)
 
 				if err != nil {
@@ -165,7 +166,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				orgSecretObject := data.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+				orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(orgSecretObject)
 
 				if err != nil {
@@ -194,7 +195,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				orgSecretObject := data.CreateOrgDependabotSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+				orgSecretObject := utils.CreateOrgDependabotSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(orgSecretObject)
 
 				if err != nil {
@@ -231,7 +232,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 					return err
 				}
 				zap.S().Debugf("Creating Repository Actions Secret Data for %s", importSecret.Name)
-				repoSecretObject := data.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
+				repoSecretObject := utils.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(repoSecretObject)
 
 				if err != nil {
@@ -260,7 +261,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				repoSecretObject := data.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
+				repoSecretObject := utils.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(repoSecretObject)
 
 				if err != nil {
@@ -289,7 +290,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				repoSecretObject := data.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
+				repoSecretObject := utils.CreateRepoSecretData(responsePublicKey.KeyID, encryptedSecret)
 				createSecret, err := json.Marshal(repoSecretObject)
 
 				if err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
+	"github.com/katiem0/gh-seva/internal/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -95,7 +96,7 @@ func NewCmdExport() *cobra.Command {
 				return err
 			}
 
-			return runCmdExport(owner, repos, &cmdFlags, data.NewAPIGetter(gqlClient, restClient), reportWriter)
+			return runCmdExport(owner, repos, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
 		},
 	}
 
@@ -111,7 +112,7 @@ func NewCmdExport() *cobra.Command {
 	return &exportCmd
 }
 
-func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIGetter, reportWriter io.Writer) error {
+func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.APIGetter, reportWriter io.Writer) error {
 	var reposCursor *string
 	var allRepos []data.RepoInfo
 
@@ -126,7 +127,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 		"RepositoryIDs",
 	})
 	if err != nil {
-		return err
+		zap.S().Error("Error raised in writing to csv", zap.Error(err))
 	}
 	if len(repos) > 0 {
 		zap.S().Infof("Processing repos: %s", repos)
@@ -137,6 +138,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 
 			repoQuery, err := g.GetRepo(owner, repo)
 			if err != nil {
+				zap.S().Error("Error raised in getting repos", zap.Error(err))
 				return err
 			}
 			allRepos = append(allRepos, repoQuery.Repository)
@@ -149,6 +151,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 			reposQuery, err := g.GetReposList(owner, reposCursor)
 
 			if err != nil {
+				zap.S().Error("Error raised in processing list of repos", zap.Error(err))
 				return err
 			}
 
@@ -163,28 +166,29 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 	}
 	// Writing to CSV Org level Actions Variables
 	if len(repos) == 0 {
-		zap.S().Debugf("Gathering ORganization level Actions Variables for %s", owner)
+		zap.S().Debugf("Gathering Organization level Actions Variables for %s", owner)
 		orgVariables, err := g.GetOrgActionVariables(owner)
 		if err != nil {
-			return err
+			zap.S().Error("Error raised in gathering organization level variables", zap.Error(err))
 		}
 		var oActionResponseObject data.VariableResponse
 		err = json.Unmarshal(orgVariables, &oActionResponseObject)
 		if err != nil {
+			zap.S().Error("Error raised in gathering variables", zap.Error(err))
 			return err
 		}
-
 		for _, orgVariable := range oActionResponseObject.Variables {
 			if orgVariable.Visibility == "selected" {
 				zap.S().Debugf("Gathering Actions Variables for %s that are scoped to specific repositories", owner)
 				scoped_repo, err := g.GetScopedOrgActionVariables(owner, orgVariable.Name)
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
+					return err
 				}
-				var responseOObject data.ScopedVariableResponse
+				var responseOObject data.ScopedResponse
 				err = json.Unmarshal(scoped_repo, &responseOObject)
 				if err != nil {
-					return err
+					zap.S().Error("Error raised in writing output", zap.Error(err))
 				}
 				var concatRepos []string
 				var concatRepoIds []string
@@ -203,6 +207,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				})
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
+					return err
 				}
 			} else if orgVariable.Visibility == "private" {
 				zap.S().Debugf("Gathering Actions Variables %s for %s that is accessible to all internal and private repositories.", orgVariable.Name, owner)
@@ -225,6 +230,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				})
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
+					return err
 				}
 			} else {
 				zap.S().Debugf("Gathering public Actions Secret %s for %s", orgVariable.Name, owner)
@@ -238,23 +244,26 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				})
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
+					return err
 				}
 			}
 		}
 	}
-
 	// Writing to CSV repository level Variables
 	for _, singleRepo := range allRepos {
 		// Writing to CSV repository level Actions Variables
+		zap.S().Debugf("Gathering repo level variables for %s", singleRepo.Name)
 		repoActionVariablesList, err := g.GetRepoActionVariables(owner, singleRepo.Name)
 		if err != nil {
-			return err
+			zap.S().Error("Error raised in getting repo variables", zap.Error(err))
 		}
 		var repoActionResponseObject data.VariableResponse
 		err = json.Unmarshal(repoActionVariablesList, &repoActionResponseObject)
 		if err != nil {
+			zap.S().Error("Error raised with variable response", zap.Error(err))
 			return err
 		}
+		zap.S().Debugf("Writing repo level variables for %s", singleRepo.Name)
 		for _, repoActionsVars := range repoActionResponseObject.Variables {
 			err = csvWriter.Write([]string{
 				"Repository",
@@ -266,6 +275,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 			})
 			if err != nil {
 				zap.S().Error("Error raised in writing output", zap.Error(err))
+				return err
 			}
 		}
 	}

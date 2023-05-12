@@ -1,4 +1,4 @@
-package data
+package utils
 
 import (
 	"fmt"
@@ -7,41 +7,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/katiem0/gh-seva/internal/data"
 	"go.uber.org/zap"
 )
 
-type ImportedVariable struct {
-	Level            string
-	Name             string `json:"name"`
-	Value            string `json:"value"`
-	Visibility       string `json:"visibility"`
-	SelectedRepos    []string
-	SelectedReposIDs []string `json:"selected_repository_ids"`
-}
-
-type CreateOrgVariable struct {
-	Name             string `json:"name"`
-	Value            string `json:"value"`
-	Visibility       string `json:"visibility"`
-	SelectedReposIDs []int  `json:"selected_repository_ids"`
-}
-
-type CreateVariableAll struct {
-	Name       string `json:"name"`
-	Value      string `json:"value"`
-	Visibility string `json:"visibility"`
-}
-
-type CreateRepoVariable struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-func (g *APIGetter) CreateVariableList(data [][]string) []ImportedVariable {
+func (g *APIGetter) CreateVariableList(filedata [][]string) []data.ImportedVariable {
 	// convert csv lines to array of structs
-	var variableList []ImportedVariable
-	var vars ImportedVariable
-	for _, each := range data[1:] {
+	var variableList []data.ImportedVariable
+	var vars data.ImportedVariable
+	for _, each := range filedata[1:] {
 		vars.Level = each[0]
 		vars.Name = each[1]
 		vars.Value = each[2]
@@ -105,13 +79,13 @@ func (g *APIGetter) CreateRepoVariable(owner string, repo string, data io.Reader
 	return err
 }
 
-func CreateOrgVariableData(variable ImportedVariable) *CreateOrgVariable {
+func CreateOrgVariableData(variable data.ImportedVariable) *data.CreateOrgVariable {
 	variableArray := make([]int, len(variable.SelectedReposIDs))
 	for i := range variableArray {
 		variableArray[i], _ = strconv.Atoi(variable.SelectedReposIDs[i])
 	}
 	fmt.Println(variableArray)
-	s := CreateOrgVariable{
+	s := data.CreateOrgVariable{
 		Name:             variable.Name,
 		Value:            variable.Value,
 		Visibility:       variable.Visibility,
@@ -120,16 +94,16 @@ func CreateOrgVariableData(variable ImportedVariable) *CreateOrgVariable {
 	return &s
 }
 
-func CreateRepoVariableData(variable ImportedVariable) *CreateRepoVariable {
-	s := CreateRepoVariable{
+func CreateRepoVariableData(variable data.ImportedVariable) *data.CreateRepoVariable {
+	s := data.CreateRepoVariable{
 		Name:  variable.Name,
 		Value: variable.Value,
 	}
 	return &s
 }
 
-func CreateOrgSourceVariableData(variable Variable) *CreateVariableAll {
-	s := CreateVariableAll{
+func CreateOrgSourceVariableData(variable data.Variable) *data.CreateVariableAll {
+	s := data.CreateVariableAll{
 		Name:       variable.Name,
 		Value:      variable.Value,
 		Visibility: variable.Visibility,

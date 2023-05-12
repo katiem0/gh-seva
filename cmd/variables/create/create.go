@@ -13,6 +13,7 @@ import (
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
+	"github.com/katiem0/gh-seva/internal/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -94,7 +95,7 @@ func NewCmdCreate() *cobra.Command {
 
 			owner := args[0]
 
-			return runCmdCreate(owner, &cmdFlags, data.NewAPIGetter(gqlClient, restClient))
+			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient))
 		},
 	}
 
@@ -110,7 +111,7 @@ func NewCmdCreate() *cobra.Command {
 	return &createCmd
 }
 
-func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
+func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 	var variableData [][]string
 	var variablesList []data.ImportedVariable
 
@@ -118,7 +119,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 		f, err := os.Open(cmdFlags.fileName)
 		zap.S().Debugf("Opening up file %s", cmdFlags.fileName)
 		if err != nil {
-			zap.S().Errorf("Error arose opening webhooks csv file")
+			zap.S().Errorf("Error arose opening variables csv file")
 		}
 		// remember to close the file at the end of the program
 		defer f.Close()
@@ -137,7 +138,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 
 			if variable.Level == "Organization" {
 				zap.S().Debugf("Gathering Organization level variable %s", variable.Name)
-				importOrgVar := data.CreateOrgVariableData(variable)
+				importOrgVar := utils.CreateOrgVariableData(variable)
 				createVariable, err := json.Marshal(importOrgVar)
 
 				if err != nil {
@@ -153,7 +154,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 			} else if variable.Level == "Repository" {
 				repoName := variable.SelectedRepos[0]
 				zap.S().Debugf("Gathering Repository level variable %s", variable.Name)
-				importRepoVar := data.CreateRepoVariableData(variable)
+				importRepoVar := utils.CreateRepoVariableData(variable)
 				createVariable, err := json.Marshal(importRepoVar)
 
 				if err != nil {
@@ -194,7 +195,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 
 		zap.S().Debugf("Gathering variables %s", cmdFlags.sourceOrg)
 
-		variableResponse, err := data.GetSourceOrganizationVariables(cmdFlags.sourceOrg, data.NewSourceAPIGetter(restSourceClient))
+		variableResponse, err := utils.GetSourceOrganizationVariables(cmdFlags.sourceOrg, utils.NewSourceAPIGetter(restSourceClient))
 		if err != nil {
 			return err
 		}
@@ -207,12 +208,12 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 			if variable.Visibility == "selected" {
 				zap.S().Debugf("Creating Scoped Variables under %s", owner)
 				var orgVariable data.CreateOrgVariable
-				scoped_repo, err := data.GetScopedSourceOrgActionVariables(cmdFlags.sourceOrg, variable.Name, data.NewSourceAPIGetter(restSourceClient))
+				scoped_repo, err := utils.GetScopedSourceOrgActionVariables(cmdFlags.sourceOrg, variable.Name, utils.NewSourceAPIGetter(restSourceClient))
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
 				}
 
-				var responseOObject data.ScopedVariableResponse
+				var responseOObject data.ScopedResponse
 				err = json.Unmarshal(scoped_repo, &responseOObject)
 				if err != nil {
 					return err
@@ -238,7 +239,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *data.APIGetter) error {
 					zap.S().Errorf("Error arose creating variable with %s", variable.Name)
 				}
 			} else {
-				orgVariable := data.CreateOrgSourceVariableData(variable)
+				orgVariable := utils.CreateOrgSourceVariableData(variable)
 				createOrgVariable, err := json.Marshal(orgVariable)
 
 				if err != nil {

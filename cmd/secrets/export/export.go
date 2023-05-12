@@ -1,4 +1,4 @@
-package secrets
+package exportsecrets
 
 import (
 	"encoding/csv"
@@ -16,6 +16,7 @@ import (
 	"github.com/cli/go-gh/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
+	"github.com/katiem0/gh-seva/internal/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -96,7 +97,7 @@ func NewCmdExport() *cobra.Command {
 				return err
 			}
 
-			return runCmdExport(owner, repos, &cmdFlags, data.NewAPIGetter(gqlClient, restClient), reportWriter)
+			return runCmdExport(owner, repos, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
 		},
 	}
 
@@ -115,7 +116,7 @@ func NewCmdExport() *cobra.Command {
 	return &exportCmd
 }
 
-func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIGetter, reportWriter io.Writer) error {
+func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.APIGetter, reportWriter io.Writer) error {
 	var reposCursor *string
 	var allRepos []data.RepoInfo
 
@@ -189,7 +190,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
 				}
-				var responseOObject data.ScopedSecretsResponse
+				var responseOObject data.ScopedResponse
 				err = json.Unmarshal(scoped_repo, &responseOObject)
 				if err != nil {
 					return err
@@ -256,6 +257,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 
 	// Writing to CSV Org level Dependabot secrets
 	if len(repos) == 0 && (cmdFlags.app == "all" || cmdFlags.app == "dependabot") {
+		zap.S().Debugf("Gathering Dependabot Secrets for %s", owner)
 
 		orgDepSecrets, err := g.GetOrgDependabotSecrets(owner)
 		if err != nil {
@@ -274,7 +276,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				if err != nil {
 					return err
 				}
-				var rDepResponseObject data.ScopedSecretsResponse
+				var rDepResponseObject data.ScopedResponse
 				err = json.Unmarshal(scoped_repo, &rDepResponseObject)
 				if err != nil {
 					return err
@@ -341,6 +343,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 
 	// Writing to CSV Org level Codespaces secrets
 	if len(repos) == 0 && (cmdFlags.app == "all" || cmdFlags.app == "codespaces") {
+		zap.S().Debugf("Gathering Codespaces Secrets for %s", owner)
 
 		orgCodeSecrets, err := g.GetOrgCodespacesSecrets(owner)
 		if err != nil {
@@ -359,7 +362,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 				if err != nil {
 					return err
 				}
-				var rCodeResponseObject data.ScopedSecretsResponse
+				var rCodeResponseObject data.ScopedResponse
 				err = json.Unmarshal(scoped_repo, &rCodeResponseObject)
 				if err != nil {
 					return err
@@ -426,8 +429,11 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 
 	// Writing to CSV repository level Secrets
 	for _, singleRepo := range allRepos {
+		zap.S().Debugf("Gathering Secrets for repo %s", singleRepo.Name)
+
 		// Writing to CSV repository level Actions secrets
 		if cmdFlags.app == "all" || cmdFlags.app == "actions" {
+			zap.S().Debugf("Gathering Actions Secrets for repo %s", singleRepo.Name)
 			repoActionSecretsList, err := g.GetRepoActionSecrets(owner, singleRepo.Name)
 			if err != nil {
 				return err
@@ -454,6 +460,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 		}
 		// Writing to CSV repository level Dependabot secrets
 		if cmdFlags.app == "all" || cmdFlags.app == "dependabot" {
+			zap.S().Debugf("Gathering Dependabot Secrets for repo %s", singleRepo.Name)
 			repoDepSecretsList, err := g.GetRepoDependabotSecrets(owner, singleRepo.Name)
 			if err != nil {
 				return err
@@ -480,6 +487,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *data.APIG
 		}
 		// Writing to CSV repository level Codespaces secrets
 		if cmdFlags.app == "all" || cmdFlags.app == "codespaces" {
+			zap.S().Debugf("Gathering Codespaces Secrets for repo %s", singleRepo.Name)
 			repoCodeSecretsList, err := g.GetRepoCodespacesSecrets(owner, singleRepo.Name)
 			if err != nil {
 				zap.S().Error("Error raised in writing output", zap.Error(err))

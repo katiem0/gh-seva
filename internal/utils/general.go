@@ -1,16 +1,16 @@
-package data
+package utils
 
 import (
 	"io"
-	"time"
 
 	"github.com/cli/go-gh/pkg/api"
+	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/shurcooL/graphql"
 )
 
 type Getter interface {
-	GetReposList(owner string, endCursor *string) ([]ReposQuery, error)
-	GetRepo(owner string, name string) ([]RepoQuery, error)
+	GetReposList(owner string, endCursor *string) ([]data.ReposQuery, error)
+	GetRepo(owner string, name string) ([]data.RepoSingleQuery, error)
 	GetOrgActionSecrets(owner string) ([]byte, error)
 	GetRepoActionSecrets(owner string, repo string) ([]byte, error)
 	GetScopedOrgActionSecrets(owner string, secret string) ([]byte, error)
@@ -20,7 +20,7 @@ type Getter interface {
 	GetOrgCodespacesSecrets(owner string) ([]byte, error)
 	GetRepoCodespacesSecrets(owner string, repo string) ([]byte, error)
 	GetScopedOrgCodespacesSecrets(owner string, secret string) ([]byte, error)
-	CreateSecretsList(data [][]string) []ImportedSecret
+	CreateSecretsList(data [][]string) []data.ImportedSecret
 	GetOrgActionPublicKey(owner string) ([]byte, error)
 	GetRepoActionPublicKey(owner string, repo string) ([]byte, error)
 	GetOrgCodespacesPublicKey(owner string) ([]byte, error)
@@ -61,41 +61,8 @@ func NewSourceAPIGetter(restClient api.RESTClient) *sourceAPIGetter {
 	}
 }
 
-type SecretExport struct {
-	SecretLevel    string
-	SecretType     string
-	SecretName     string
-	SecretAccess   string
-	RepositoryName string
-	RepositoryID   int
-}
-
-type RepoInfo struct {
-	DatabaseId int       `json:"databaseId"`
-	Name       string    `json:"name"`
-	UpdatedAt  time.Time `json:"updatedAt"`
-	Visibility string    `json:"visibility"`
-}
-
-type ReposQuery struct {
-	Organization struct {
-		Repositories struct {
-			TotalCount int
-			Nodes      []RepoInfo
-			PageInfo   struct {
-				EndCursor   string
-				HasNextPage bool
-			}
-		} `graphql:"repositories(first: 100, after: $endCursor)"`
-	} `graphql:"organization(login: $owner)"`
-}
-
-type RepoQuery struct {
-	Repository RepoInfo `graphql:"repository(owner: $owner, name: $name)"`
-}
-
-func (g *APIGetter) GetReposList(owner string, endCursor *string) (*ReposQuery, error) {
-	query := new(ReposQuery)
+func (g *APIGetter) GetReposList(owner string, endCursor *string) (*data.ReposQuery, error) {
+	query := new(data.ReposQuery)
 	variables := map[string]interface{}{
 		"endCursor": (*graphql.String)(endCursor),
 		"owner":     graphql.String(owner),
@@ -106,8 +73,8 @@ func (g *APIGetter) GetReposList(owner string, endCursor *string) (*ReposQuery, 
 	return query, err
 }
 
-func (g *APIGetter) GetRepo(owner string, name string) (*RepoQuery, error) {
-	query := new(RepoQuery)
+func (g *APIGetter) GetRepo(owner string, name string) (*data.RepoSingleQuery, error) {
+	query := new(data.RepoSingleQuery)
 	variables := map[string]interface{}{
 		"owner": graphql.String(owner),
 		"name":  graphql.String(name),
@@ -115,46 +82,4 @@ func (g *APIGetter) GetRepo(owner string, name string) (*RepoQuery, error) {
 
 	err := g.gqlClient.Query("getRepo", &query, variables)
 	return query, err
-}
-
-type SecretsResponse struct {
-	TotalCount int      `json:"total_count"`
-	Secrets    []Secret `json:"secrets"`
-}
-
-type Secret struct {
-	Name          string    `json:"name"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	Visibility    string    `json:"visibility"`
-	SelectedRepos string    `json:"selected_repositories_url"`
-}
-
-type ScopedSecretsResponse struct {
-	TotalCount   int                `json:"total_count"`
-	Repositories []ScopedRepository `json:"repositories"`
-}
-
-type ScopedRepository struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type VariableResponse struct {
-	TotalCount int        `json:"total_count"`
-	Variables  []Variable `json:"variables"`
-}
-
-type Variable struct {
-	Name          string    `json:"name"`
-	Value         string    `json:"value"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	Visibility    string    `json:"visibility"`
-	SelectedRepos string    `json:"selected_repositories_url"`
-}
-
-type ScopedVariableResponse struct {
-	TotalCount   int                `json:"total_count"`
-	Repositories []ScopedRepository `json:"repositories"`
 }
