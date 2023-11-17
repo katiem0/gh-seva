@@ -1,6 +1,6 @@
 # gh-seva
 
-A GitHub `gh` [CLI](https://cli.github.com/) extension to list and create Secrets and Variables defined at an Organization level, as well as create webhooks from a file or `source-org` under a new organization.
+A GitHub `gh` [CLI](https://cli.github.com/) extension to list and create Secrets and Variables defined at an Organization level and/or Repository level.
 
 ## Installation
 
