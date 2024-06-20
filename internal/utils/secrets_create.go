@@ -27,29 +27,26 @@ func (g *APIGetter) CreateSecretsList(filedata [][]string) []data.ImportedSecret
 	return importSecretList
 }
 
-func (g *APIGetter) EncryptSecret(publickey string, secret string) (string, error) {
-	var pkBytes [32]byte
-	copy(pkBytes[:], publickey)
-	secretBytes := secret
-
-	out := make([]byte, 0,
-		len(secretBytes)+
-			box.Overhead+
-			len(pkBytes))
-
-	enc, err := box.SealAnonymous(
-		out, []byte(secretBytes), &pkBytes, rand.Reader,
-	)
+func (g *APIGetter) EncryptSecret(publicKey string, secret string) (string, error) {
+	bytes, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return "", err
 	}
 
-	encEnc := base64.StdEncoding.EncodeToString(enc)
+	var decodedKey [32]byte
+	copy(decodedKey[:], bytes)
 
-	return encEnc, nil
+	encrypted, err := box.SealAnonymous(nil, []byte(secret), (*[32]byte)(bytes), rand.Reader)
+	if err != nil {
+		return "", err
+	}
+	// Encode the encrypted value in base64
+	encryptedValue := base64.StdEncoding.EncodeToString(encrypted)
+
+	return encryptedValue, nil
 }
 
-func CreateOrgSecretData(secret data.ImportedSecret, keyID string, encryptedValue string) *data.CreateOrgSecret {
+func CreateSelectedOrgSecretData(secret data.ImportedSecret, keyID string, encryptedValue string) *data.CreateOrgSecret {
 	secretArray := make([]int, len(secret.RepositoryIDs))
 	for i := range secretArray {
 		secretArray[i], _ = strconv.Atoi(secret.RepositoryIDs[i])
@@ -59,6 +56,15 @@ func CreateOrgSecretData(secret data.ImportedSecret, keyID string, encryptedValu
 		KeyID:          keyID,
 		Visibility:     secret.Access,
 		SelectedRepos:  secretArray,
+	}
+	return &s
+}
+
+func CreateOrgSecretData(secret data.ImportedSecret, keyID string, encryptedValue string) *data.CreateOrgSecretAll {
+	s := data.CreateOrgSecretAll{
+		EncryptedValue: encryptedValue,
+		KeyID:          keyID,
+		Visibility:     secret.Access,
 	}
 	return &s
 }

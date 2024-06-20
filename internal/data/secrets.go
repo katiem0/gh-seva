@@ -9,6 +9,12 @@ type CreateOrgSecret struct {
 	SelectedRepos  []int  `json:"selected_repository_ids"`
 }
 
+type CreateOrgSecretAll struct {
+	EncryptedValue string `json:"encrypted_value"`
+	KeyID          string `json:"key_id"`
+	Visibility     string `json:"visibility"`
+}
+
 // Address Dependabot API differences
 type CreateOrgDepSecret struct {
 	EncryptedValue string   `json:"encrypted_value"`

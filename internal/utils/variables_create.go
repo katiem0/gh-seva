@@ -79,17 +79,25 @@ func (g *APIGetter) CreateRepoVariable(owner string, repo string, data io.Reader
 	return err
 }
 
-func CreateOrgVariableData(variable data.ImportedVariable) *data.CreateOrgVariable {
+func CreateSelectedOrgVariableData(variable data.ImportedVariable) *data.CreateOrgVariable {
 	variableArray := make([]int, len(variable.SelectedReposIDs))
 	for i := range variableArray {
 		variableArray[i], _ = strconv.Atoi(variable.SelectedReposIDs[i])
 	}
-	fmt.Println(variableArray)
 	s := data.CreateOrgVariable{
 		Name:             variable.Name,
 		Value:            variable.Value,
 		Visibility:       variable.Visibility,
 		SelectedReposIDs: variableArray,
+	}
+	return &s
+}
+
+func CreateOrgVariableData(variable data.ImportedVariable) *data.CreateVariableAll {
+	s := data.CreateVariableAll{
+		Name:       variable.Name,
+		Value:      variable.Value,
+		Visibility: variable.Visibility,
 	}
 	return &s
 }
