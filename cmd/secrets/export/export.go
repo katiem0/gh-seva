@@ -102,7 +102,7 @@ func NewCmdExport() *cobra.Command {
 	}
 
 	// Determine default report file based on current timestamp; for more info see https://pkg.go.dev/time#pkg-constants
-	reportFileDefault := fmt.Sprintf("report-%s.csv", time.Now().Format("20060102150405"))
+	reportFileDefault := fmt.Sprintf("report-secrets-%s.csv", time.Now().Format("20060102150405"))
 	appDefault := "all"
 	// Configure flags for command
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/cli/go-gh"
@@ -138,15 +139,27 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 
 			if variable.Level == "Organization" {
 				zap.S().Debugf("Gathering Organization level variable %s", variable.Name)
-				importOrgVar := utils.CreateOrgVariableData(variable)
-				createVariable, err := json.Marshal(importOrgVar)
+				var reader io.Reader
+				if variable.Visibility == "selected" {
+					importOrgVar := utils.CreateSelectedOrgVariableData(variable)
+					createVariable, err := json.Marshal(importOrgVar)
 
-				if err != nil {
-					return err
+					if err != nil {
+						return err
+					}
+
+					reader = bytes.NewReader(createVariable)
+				} else {
+					importOrgVar := utils.CreateOrgVariableData(variable)
+					createVariable, err := json.Marshal(importOrgVar)
+
+					if err != nil {
+						return err
+					}
+
+					reader = bytes.NewReader(createVariable)
 				}
-
-				reader := bytes.NewReader(createVariable)
-				zap.S().Debugf("Creating Variables under %s", owner)
+				zap.S().Debugf("Creating Variable %s under %s", variable.Name, owner)
 				err = g.CreateOrganizationVariable(owner, reader)
 				if err != nil {
 					zap.S().Errorf("Error arose creating variable with %s", variable.Name)

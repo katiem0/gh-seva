@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	gh "github.com/cli/go-gh"
@@ -137,16 +138,25 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 					return err
 				}
 				zap.S().Debugf("Creating Organization Actions Secret Data for %s", importSecret.Name)
-				orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
-				createSecret, err := json.Marshal(orgSecretObject)
 
-				if err != nil {
-					return err
+				var reader io.Reader
+				if importSecret.Access == "selected" {
+					orgSecretObject := utils.CreateSelectedOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
+				} else {
+					orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
 				}
 
-				reader := bytes.NewReader(createSecret)
 				zap.S().Debugf("Creating Organization Actions Secret %s", importSecret.Name)
-
 				err = g.CreateOrgActionSecret(owner, importSecret.Name, reader)
 				if err != nil {
 					zap.S().Errorf("Error arose creating Actions secret %s", importSecret.Name)
@@ -166,14 +176,22 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
-				createSecret, err := json.Marshal(orgSecretObject)
-
-				if err != nil {
-					return err
+				var reader io.Reader
+				if importSecret.Access == "selected" {
+					orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
+				} else {
+					orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
 				}
-
-				reader := bytes.NewReader(createSecret)
 				zap.S().Debugf("Creating Organization Codespaces Secret %s", importSecret.Name)
 
 				err = g.CreateOrgCodespacesSecret(owner, importSecret.Name, reader)
@@ -195,14 +213,24 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					return err
 				}
-				orgSecretObject := utils.CreateOrgDependabotSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
-				createSecret, err := json.Marshal(orgSecretObject)
 
-				if err != nil {
-					return err
+				var reader io.Reader
+				if importSecret.Access == "selected" {
+					orgSecretObject := utils.CreateOrgDependabotSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
+				} else {
+					orgSecretObject := utils.CreateOrgSecretData(importSecret, responsePublicKey.KeyID, encryptedSecret)
+					createSecret, err := json.Marshal(orgSecretObject)
+					if err != nil {
+						return err
+					}
+					reader = bytes.NewReader(createSecret)
 				}
 
-				reader := bytes.NewReader(createSecret)
 				zap.S().Debugf("Creating Organization Dependabot Secret %s", importSecret.Name)
 
 				err = g.CreateOrgDependabotSecret(owner, importSecret.Name, reader)
