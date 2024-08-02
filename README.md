@@ -151,7 +151,7 @@ Use "seva variables [command] --help" for more information about a command.
 
 Organization level variables can be created from a `csv` file using `--from-file` following the format outlined in [`gh seva variables`](#variables).
 
-* If specifying a Source Organization (`--source-organization`) to retrieve secrets and create under a new Org, the `--source-token` is required.
+* If specifying a Source Organization (`--source-organization`) to retrieve variables and create under a new Org, the `--source-token` is required.
 
 ```sh
 $ gh seva variables create -h
@@ -176,7 +176,7 @@ Global Flags:
 
 #### Export Variables
 
-The `gh seva variables export` command exports variables for the specified `<organization>` or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository level variables will be exported**. The report will contain secrets produces a `csv` report with the following:
+The `gh seva variables export` command exports variables for the specified `<organization>` or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository level variables will be exported**. The report will contain variables produces a `csv` report with the following:
 
 - `VariableLevel`: If the variable was created at the organization or repository level
 - `VariableName`: The name of the Actions variable
