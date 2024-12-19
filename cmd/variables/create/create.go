@@ -9,9 +9,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/cli/go-gh"
-	"github.com/cli/go-gh/pkg/api"
-	"github.com/cli/go-gh/pkg/auth"
+	"github.com/cli/go-gh/v2/pkg/api"
+	"github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/katiem0/gh-seva/internal/data"
 	"github.com/katiem0/gh-seva/internal/log"
 	"github.com/katiem0/gh-seva/internal/utils"
@@ -51,8 +50,8 @@ func NewCmdCreate() *cobra.Command {
 		},
 		RunE: func(createCmd *cobra.Command, args []string) error {
 			var err error
-			var gqlClient api.GQLClient
-			var restClient api.RESTClient
+			var gqlClient *api.GraphQLClient
+			var restClient *api.RESTClient
 
 			// Reinitialize logging if debugging was enabled
 			if cmdFlags.debug {
@@ -68,7 +67,7 @@ func NewCmdCreate() *cobra.Command {
 				authToken = t
 			}
 
-			gqlClient, err = gh.GQLClient(&api.ClientOptions{
+			gqlClient, err = api.NewGraphQLClient(api.ClientOptions{
 				Headers: map[string]string{
 					"Accept": "application/vnd.github.hawkgirl-preview+json",
 				},
@@ -81,7 +80,7 @@ func NewCmdCreate() *cobra.Command {
 				return err
 			}
 
-			restClient, err = gh.RESTClient(&api.ClientOptions{
+			restClient, err = api.NewRESTClient(api.ClientOptions{
 				Headers: map[string]string{
 					"Accept": "application/vnd.github+json",
 				},
@@ -96,7 +95,7 @@ func NewCmdCreate() *cobra.Command {
 
 			owner := args[0]
 
-			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient))
+			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(*gqlClient, *restClient))
 		},
 	}
 
@@ -185,7 +184,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 	} else if len(cmdFlags.sourceOrg) > 0 {
 		zap.S().Debugf("Reading in variables from %s", cmdFlags.sourceOrg)
 		var authToken string
-		var restSourceClient api.RESTClient
+		var restSourceClient *api.RESTClient
 
 		if cmdFlags.sourceToken != "" {
 			authToken = cmdFlags.sourceToken
@@ -194,7 +193,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 			authToken = t
 		}
 
-		restSourceClient, err := gh.RESTClient(&api.ClientOptions{
+		restSourceClient, err := api.NewRESTClient(api.ClientOptions{
 			Headers: map[string]string{
 				"Accept": "application/vnd.github+json",
 			},
@@ -208,7 +207,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 
 		zap.S().Debugf("Gathering variables %s", cmdFlags.sourceOrg)
 
-		variableResponse, err := utils.GetSourceOrganizationVariables(cmdFlags.sourceOrg, utils.NewSourceAPIGetter(restSourceClient))
+		variableResponse, err := utils.GetSourceOrganizationVariables(cmdFlags.sourceOrg, utils.NewSourceAPIGetter(*restSourceClient))
 		if err != nil {
 			return err
 		}
@@ -221,7 +220,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 			if variable.Visibility == "selected" {
 				zap.S().Debugf("Creating Scoped Variables under %s", owner)
 				var orgVariable data.CreateOrgVariable
-				scoped_repo, err := utils.GetScopedSourceOrgActionVariables(cmdFlags.sourceOrg, variable.Name, utils.NewSourceAPIGetter(restSourceClient))
+				scoped_repo, err := utils.GetScopedSourceOrgActionVariables(cmdFlags.sourceOrg, variable.Name, utils.NewSourceAPIGetter(*restSourceClient))
 				if err != nil {
 					zap.S().Error("Error raised in writing output", zap.Error(err))
 				}
