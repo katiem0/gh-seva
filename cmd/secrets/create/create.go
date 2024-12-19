@@ -81,7 +81,7 @@ func NewCmdCreate() *cobra.Command {
 
 			owner := args[0]
 
-			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(*gqlClient, *restClient))
+			return runCmdCreate(owner, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient))
 		},
 	}
 

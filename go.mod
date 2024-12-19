@@ -2,8 +2,6 @@ module github.com/katiem0/gh-seva
 
 go 1.21
 
-toolchain go1.23.1
-
 require github.com/cli/go-gh/v2 v2.11.1
 
 require (

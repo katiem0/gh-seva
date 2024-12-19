@@ -44,10 +44,10 @@ type APIGetter struct {
 	restClient api.RESTClient
 }
 
-func NewAPIGetter(gqlClient api.GraphQLClient, restClient api.RESTClient) *APIGetter {
+func NewAPIGetter(gqlClient *api.GraphQLClient, restClient *api.RESTClient) *APIGetter {
 	return &APIGetter{
-		gqlClient:  gqlClient,
-		restClient: restClient,
+		gqlClient:  *gqlClient,
+		restClient: *restClient,
 	}
 }
 
