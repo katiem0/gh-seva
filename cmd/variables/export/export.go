@@ -95,7 +95,7 @@ func NewCmdExport() *cobra.Command {
 				return err
 			}
 
-			return runCmdExport(owner, repos, utils.NewAPIGetter(*gqlClient, *restClient), reportWriter)
+			return runCmdExport(owner, repos, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
 		},
 	}
 
