@@ -17,6 +17,12 @@ For more information: [`gh extension install`](https://cli.github.com/manual/gh_
 
 This extension supports listing and creating secrets and variables between `GitHub.com` and GitHub Enterprise Server, through the use of `--hostname` and `--source-hostname`.
 
+If you are listing or creating org level secrets or variables, you'll need to ensure you have logged in with the `admin:org` scope. To do so, run the following command:
+```sh
+gh auth login -s admin:org
+```
+
+
 ```sh
 $ gh seva -h
 Export and Create secrets and variables for an organization and/or repositories.
