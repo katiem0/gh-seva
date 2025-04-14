@@ -514,7 +514,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.API
 	}
 
 	csvWriter.Flush()
-	fmt.Printf("Successfully exported secrets for %s", owner)
+	fmt.Printf("Successfully exported secrets for %s to %s\n", owner, cmdFlags.reportFile)
 	return nil
 
 }

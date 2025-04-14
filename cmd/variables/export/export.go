@@ -95,7 +95,7 @@ func NewCmdExport() *cobra.Command {
 				return err
 			}
 
-			return runCmdExport(owner, repos, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
+			return runCmdExport(owner, repos, &cmdFlags, utils.NewAPIGetter(gqlClient, restClient), reportWriter)
 		},
 	}
 
@@ -111,7 +111,7 @@ func NewCmdExport() *cobra.Command {
 	return &exportCmd
 }
 
-func runCmdExport(owner string, repos []string, g *utils.APIGetter, reportWriter io.Writer) error {
+func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.APIGetter, reportWriter io.Writer) error {
 	var reposCursor *string
 	var allRepos []data.RepoInfo
 
@@ -280,6 +280,6 @@ func runCmdExport(owner string, repos []string, g *utils.APIGetter, reportWriter
 	}
 
 	csvWriter.Flush()
-	fmt.Printf("Successfully exported variables for %s", owner)
+	fmt.Printf("Successfully exported variables for %s to %s\n", owner, cmdFlags.reportFile)
 	return nil
 }
