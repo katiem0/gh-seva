@@ -57,7 +57,11 @@ func (g *APIGetter) GetOrgCodespacesPublicKey(owner string) ([]byte, error) {
 	if err != nil {
 		log.Printf("Body read error, %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Body read error, %v", err)
@@ -72,7 +76,11 @@ func (g *APIGetter) GetRepoCodespacesPublicKey(owner string, repo string) ([]byt
 	if err != nil {
 		log.Printf("Body read error, %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Body read error, %v", err)
@@ -87,7 +95,11 @@ func (g *APIGetter) CreateOrgCodespacesSecret(owner string, secret string, data 
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	return err
 }
 
@@ -98,6 +110,10 @@ func (g *APIGetter) CreateRepoCodespacesSecret(owner string, repo string, secret
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	return err
 }
