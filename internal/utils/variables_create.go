@@ -35,7 +35,11 @@ func GetSourceOrganizationVariables(owner string, g *sourceAPIGetter) ([]byte, e
 	if err != nil {
 		log.Printf("Body read error, %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Body read error, %v", err)
@@ -64,7 +68,11 @@ func (g *APIGetter) CreateOrganizationVariable(owner string, data io.Reader) err
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	return err
 }
 
@@ -75,7 +83,11 @@ func (g *APIGetter) CreateRepoVariable(owner string, repo string, data io.Reader
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zap.S().Errorf("Error closing response body: %v", err)
+		}
+	}()
 	return err
 }
 

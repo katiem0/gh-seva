@@ -1,12 +1,21 @@
 # gh-seva
 
-A GitHub `gh` [CLI](https://cli.github.com/) extension to list and create Secrets and Variables defined at an Organization level and/or Repository level.
+[![GitHub Release](https://img.shields.io/github/v/release/katiem0/gh-seva?style=flat&logo=github)](https://github.com/katiem0/gh-seva/releases)
+[![PR Checks](https://github.com/katiem0/gh-seva/actions/workflows/main.yml/badge.svg)](https://github.com/katiem0/gh-seva/actions/workflows/main.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/katiem0/gh-seva)](https://goreportcard.com/report/github.com/katiem0/gh-seva)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/katiem0/gh-seva)](https://go.dev/)
+
+A GitHub `gh` [CLI](https://cli.github.com/) extension to list and create Secrets and Variables
+defined at an Organization level and/or Repository level.
 
 ## Installation
 
-1. Install the `gh` CLI - see the [installation](https://github.com/cli/cli#installation) instructions.
+1. Install the `gh` CLI - see the [installation](https://github.com/cli/cli#installation)
+   instructions.
 
 2. Install the extension:
+
    ```sh
    gh extension install katiem0/gh-seva
    ```
@@ -15,13 +24,15 @@ For more information: [`gh extension install`](https://cli.github.com/manual/gh_
 
 ## Usage
 
-This extension supports listing and creating secrets and variables between `GitHub.com` and GitHub Enterprise Server, through the use of `--hostname` and `--source-hostname`.
+This extension supports listing and creating secrets and variables between `GitHub.com` and
+GitHub Enterprise Server, through the use of `--hostname` and `--source-hostname`.
 
-If you are listing or creating org level secrets or variables, you'll need to ensure you have logged in with the `admin:org` scope. To do so, run the following command:
+If you are listing or creating org level secrets or variables, you'll need to ensure you
+have logged in with the `admin:org` scope. To do so, run the following command:
+
 ```sh
 gh auth login -s admin:org
 ```
-
 
 ```sh
 $ gh seva -h
@@ -42,7 +53,8 @@ Use "seva [command] --help" for more information about a command.
 
 ### Secrets
 
-The `gh seva secrets` command comprises of two subcommands, `export` and `create`, to access and create Organization level and repository level secrets.
+The `gh seva secrets` command comprises of two subcommands, `export` and `create`, to access
+and create Organization level and repository level secrets.
 
 ```sh
 $ gh seva secrets -h
@@ -63,15 +75,19 @@ Use "seva secrets [command] --help" for more information about a command.
 
 #### Create Secrets
 
-The `gh seva secrets create` command will create secrets from a `csv` file that contains the following information:
+The `gh seva secrets create` command will create secrets from a `csv` file that contains
+the following information:
 
 - `SecretLevel`: If the secret was created at the organization or repository level
 - `SecretType`: If the secret was created for `Actions`, `Dependabot` or `Codespaces`
 - `SecretName`: The name of the secret
--	`SecretValue`: The value of the secret that will be [encrypted using the associated `public key`](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-- `SecretAccess`: If an organization level secret, the visibility of the secret (i.e. `all`, `private`, or `scoped`)
-- `RepositoryNames`: The name of the repositories that the secret can be accessed from (delimited with `;`)
-- `RepositoryIDs`: The `id` of the repositories that the secret can be accessed from (delimited with `;`)
+- `SecretValue`: The value of the secret that will be [encrypted using the associated `public key`](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- `SecretAccess`: If an organization level secret, the visibility of the secret
+  (i.e. `all`, `private`, or `scoped`)
+- `RepositoryNames`: The name of the repositories that the secret can be accessed
+  from (delimited with `;`)
+- `RepositoryIDs`: The `id` of the repositories that the secret can be accessed
+  from (delimited with `;`)
 
 This extension supports `GitHub.com` and GHES, through the use of `--hostname` and `--token`.
 
@@ -94,15 +110,21 @@ Global Flags:
 
 #### Export Secrets
 
-The `gh seva secrets export` command exports secrets for the specified `<organization>` or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository level secrets will be exported**. The report will contain secrets produces a `csv` report with the following:
+The `gh seva secrets export` command exports secrets for the specified `<organization>`
+or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository
+level secrets will be exported**. The report will contain secrets produces a `csv` report
+with the following:
 
 - `SecretLevel`: If the secret was created at the organization or repository level
 - `SecretType`: If the secret was created for `Actions`, `Dependabot` or `Codespaces`
 - `SecretName`: The name of the secret
--	`SecretValue`: This field **will be blank**, we cannot export secret values.
-- `SecretAccess`: If an organization level secret, this is the visibility of the secret (i.e. `all`, `private`, or `scoped`)
-- `RepositoryNames`: The name of the repositories that the secret can be accessed from (delimited with `;`)
-- `RepositoryIDs`: The `id` of the repositories that the secret can be accessed from (delimited with `;`)
+- `SecretValue`: This field **will be blank**, we cannot export secret values.
+- `SecretAccess`: If an organization level secret, this is the visibility of the secret
+  (i.e. `all`, `private`, or `scoped`)
+- `RepositoryNames`: The name of the repositories that the secret can be accessed from
+  (delimited with `;`)
+- `RepositoryIDs`: The `id` of the repositories that the secret can be accessed from
+  (delimited with `;`)
 
 This extension supports `GitHub.com` and GHES, through the use of `--hostname` and `--token`.
 
@@ -131,10 +153,12 @@ Organization level Actions variables can be created and exported, relying on the
 - `VariableLevel`: If the variable was created at the organization or repository level
 - `VariableName`: The name of the Actions variable
 - `VariableValue`: The value of the Actions variable
-- `VariableAccess`: If an organization level variable, this is the visibility of the variable (i.e. `all`, `private`, or `scoped`)
-- `RepositoryNames`: The name of the repositories that the variable can be accessed from (delimited with `;`)
-- `RepositoryIDs`: The `id` of the repositories that the variable can be accessed from (delimited with `;`)
-
+- `VariableAccess`: If an organization level variable, this is the visibility of the
+  variable (i.e. `all`, `private`, or `scoped`)
+- `RepositoryNames`: The name of the repositories that the variable can be accessed
+  from (delimited with `;`)
+- `RepositoryIDs`: The `id` of the repositories that the variable can be accessed
+  from (delimited with `;`)
 
 ```sh
 $ gh seva variables -h
@@ -155,9 +179,11 @@ Use "seva variables [command] --help" for more information about a command.
 
 #### Create Variables
 
-Organization level variables can be created from a `csv` file using `--from-file` following the format outlined in [`gh seva variables`](#variables).
+Organization level variables can be created from a `csv` file using `--from-file` following the
+format outlined in [`gh seva variables`](#variables).
 
-* If specifying a Source Organization (`--source-organization`) to retrieve variables and create under a new Org, the `--source-token` is required.
+- If specifying a Source Organization (`--source-organization`) to retrieve variables and
+  create under a new Org, the `--source-token` is required.
 
 ```sh
 $ gh seva variables create -h
@@ -182,14 +208,20 @@ Global Flags:
 
 #### Export Variables
 
-The `gh seva variables export` command exports variables for the specified `<organization>` or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository level variables will be exported**. The report will contain variables produces a `csv` report with the following:
+The `gh seva variables export` command exports variables for the specified `<organization>`
+or `[repo ..]` list. If `<organization>` is selected, **both organization level and repository
+level variables will be exported**. The report will contain variables produces a `csv` report
+with the following:
 
 - `VariableLevel`: If the variable was created at the organization or repository level
 - `VariableName`: The name of the Actions variable
 - `VariableValue`: The value of the Actions variable
-- `VariableAccess`: If an organization level variable, this is the visibility of the variable (i.e. `all`, `private`, or `scoped`)
-- `RepositoryNames`: The name of the repositories that the variable can be accessed from (delimited with `;`)
-- `RepositoryIDs`: The `id` of the repositories that the variable can be accessed from (delimited with `;`)
+- `VariableAccess`: If an organization level variable, this is the visibility of the variable
+  (i.e. `all`, `private`, or `scoped`)
+- `RepositoryNames`: The name of the repositories that the variable can be accessed from
+  (delimited with `;`)
+- `RepositoryIDs`: The `id` of the repositories that the variable can be accessed from
+  (delimited with `;`)
 
 This extension supports `GitHub.com` and GHES, through the use of `--hostname` and `--token`.
 

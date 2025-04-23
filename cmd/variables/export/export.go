@@ -177,7 +177,8 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.API
 			return err
 		}
 		for _, orgVariable := range oActionResponseObject.Variables {
-			if orgVariable.Visibility == "selected" {
+			switch orgVariable.Visibility {
+			case "selected":
 				zap.S().Debugf("Gathering Actions Variables for %s that are scoped to specific repositories", owner)
 				scoped_repo, err := g.GetScopedOrgActionVariables(owner, orgVariable.Name)
 				if err != nil {
@@ -208,7 +209,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.API
 					zap.S().Error("Error raised in writing output", zap.Error(err))
 					return err
 				}
-			} else if orgVariable.Visibility == "private" {
+			case "private":
 				zap.S().Debugf("Gathering Actions Variables %s for %s that is accessible to all internal and private repositories.", orgVariable.Name, owner)
 				var concatRepos []string
 				var concatRepoIds []string
@@ -231,7 +232,7 @@ func runCmdExport(owner string, repos []string, cmdFlags *cmdFlags, g *utils.API
 					zap.S().Error("Error raised in writing output", zap.Error(err))
 					return err
 				}
-			} else {
+			default:
 				zap.S().Debugf("Gathering public Actions Secret %s for %s", orgVariable.Name, owner)
 				err = csvWriter.Write([]string{
 					"Organization",

@@ -90,7 +90,10 @@ func NewCmdCreate() *cobra.Command {
 	createCmd.PersistentFlags().StringVarP(&cmdFlags.hostname, "hostname", "", "github.com", "GitHub Enterprise Server hostname")
 	createCmd.Flags().StringVarP(&cmdFlags.fileName, "from-file", "f", "", "Path and Name of CSV file to create secrets from (required)")
 	createCmd.PersistentFlags().BoolVarP(&cmdFlags.debug, "debug", "d", false, "To debug logging")
-	createCmd.MarkFlagRequired("from-file")
+	if err := createCmd.MarkFlagRequired("from-file"); err != nil {
+		zap.S().Errorf("Error marking from-file flag as required: %v", err)
+		return nil
+	}
 
 	return &createCmd
 }
@@ -104,8 +107,11 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 		if err != nil {
 			zap.S().Errorf("Error arose opening secret csv file")
 		}
-		// remember to close the file at the end of the program
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				zap.S().Errorf("Error closing file: %v", err)
+			}
+		}()
 		// read csv values using csv.Reader
 		csvReader := csv.NewReader(f)
 		secretData, err = csvReader.ReadAll()
@@ -119,9 +125,11 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 	}
 	zap.S().Debugf("Determining secrets to create")
 	for _, importSecret := range importSecretList {
-		if importSecret.Level == "Organization" {
+		switch importSecret.Level {
+		case "Organization":
 			zap.S().Debugf("Gathering Organization level secret %s", importSecret.Name)
-			if importSecret.Type == "Actions" {
+			switch importSecret.Type {
+			case "Actions":
 				zap.S().Debugf("Encrypting Organization level Actions secret %s", importSecret.Name)
 				publicKey, err := g.GetOrgActionPublicKey(owner)
 				if err != nil {
@@ -160,7 +168,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating Actions secret %s", importSecret.Name)
 				}
-			} else if importSecret.Type == "Codespaces" {
+			case "Codespaces":
 				zap.S().Debugf("Encrypting Organization level Codespaces secret %s", importSecret.Name)
 				publicKey, err := g.GetOrgCodespacesPublicKey(owner)
 				if err != nil {
@@ -197,7 +205,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating Organization Codespaces secret %s", importSecret.Name)
 				}
-			} else if importSecret.Type == "Dependabot" {
+			case "Dependabot":
 				zap.S().Debugf("Encrypting Organization level Dependabot secret %s", importSecret.Name)
 				publicKey, err := g.GetOrgDependabotPublicKey(owner)
 				if err != nil {
@@ -237,13 +245,14 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 					zap.S().Errorf("Error arose creating Organization Dependabot secret %s", importSecret.Name)
 				}
 
-			} else {
+			default:
 				zap.S().Errorf("Error arose reading secret from csv file")
 			}
-		} else if importSecret.Level == "Repository" {
+		case "Repository":
 			repoName := importSecret.RepositoryNames[0]
 			zap.S().Debugf("Gathering Repository level secret %s", importSecret.Name)
-			if importSecret.Type == "Actions" {
+			switch importSecret.Type {
+			case "Actions":
 				zap.S().Debugf("Encrypting Repository %s level Actions secret %s", repoName, importSecret.Name)
 				publicKey, err := g.GetRepoActionPublicKey(owner, repoName)
 				if err != nil {
@@ -273,7 +282,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating Repository Actions secret %s", importSecret.Name)
 				}
-			} else if importSecret.Type == "Codespaces" {
+			case "Codespaces":
 				zap.S().Debugf("Encrypting Repository level Codespaces secret %s", importSecret.Name)
 				publicKey, err := g.GetRepoCodespacesPublicKey(owner, repoName)
 				if err != nil {
@@ -302,7 +311,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating Repository Codespaces secret %s", importSecret.Name)
 				}
-			} else if importSecret.Type == "Dependabot" {
+			case "Dependabot":
 				zap.S().Debugf("Encrypting Repository level Dependabot secret %s", importSecret.Name)
 				publicKey, err := g.GetRepoDependabotPublicKey(owner, repoName)
 				if err != nil {
@@ -331,11 +340,10 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating Repository Dependabot secret %s", importSecret.Name)
 				}
-
-			} else {
+			default:
 				zap.S().Errorf("Error arose reading secret from csv file")
 			}
-		} else {
+		default:
 			zap.S().Errorf("Error arose reading in where to create secret %s, check csv file.", importSecret.Name)
 		}
 	}

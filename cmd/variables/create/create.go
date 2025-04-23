@@ -40,11 +40,11 @@ func NewCmdCreate() *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(createCmd *cobra.Command, args []string) error {
 			if len(cmdFlags.fileName) == 0 && len(cmdFlags.sourceOrg) == 0 {
-				return errors.New("A file or source organization must be specified where variables will be created from.")
+				return errors.New("a file or source organization must be specified where variables will be created from")
 			} else if len(cmdFlags.sourceOrg) > 0 && len(cmdFlags.sourceToken) == 0 {
-				return errors.New("A Personal Access Token must be specified to access variables from the Source Organization.")
+				return errors.New("a Personal Access Token must be specified to access variables from the Source Organization")
 			} else if len(cmdFlags.fileName) > 0 && len(cmdFlags.sourceOrg) > 0 {
-				return errors.New("Specify only one of `--source-organization` or `from-file`.")
+				return errors.New("specify only one of `--source-organization` or `from-file`")
 			}
 			return nil
 		},
@@ -121,8 +121,11 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 		if err != nil {
 			zap.S().Errorf("Error arose opening variables csv file")
 		}
-		// remember to close the file at the end of the program
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				zap.S().Errorf("Error closing file: %v", err)
+			}
+		}()
 
 		// read csv values using csv.Reader
 		csvReader := csv.NewReader(f)
@@ -136,7 +139,8 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 		zap.S().Debugf("Determining variables to create")
 		for _, variable := range variablesList {
 
-			if variable.Level == "Organization" {
+			switch variable.Level {
+			case "Organization":
 				zap.S().Debugf("Gathering Organization level variable %s", variable.Name)
 				var reader io.Reader
 				if variable.Visibility == "selected" {
@@ -163,7 +167,7 @@ func runCmdCreate(owner string, cmdFlags *cmdFlags, g *utils.APIGetter) error {
 				if err != nil {
 					zap.S().Errorf("Error arose creating variable with %s", variable.Name)
 				}
-			} else if variable.Level == "Repository" {
+			case "Repository":
 				repoName := variable.SelectedRepos[0]
 				zap.S().Debugf("Gathering Repository level variable %s", variable.Name)
 				importRepoVar := utils.CreateRepoVariableData(variable)
