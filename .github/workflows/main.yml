@@ -38,13 +38,18 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          go test ./... -race -coverprofile=coverage.txt -covermode=atomic 2>&1 | tee test_output.log
+          go test ./... -race -coverprofile=coverage_raw.txt -covermode=atomic 2>&1 | tee test_output.log
+          
+          # Remove mock files from coverage report
+          grep -v "mock_getter.go" coverage_raw.txt | \
+          grep -v "mock_restclient.go" | \
+          grep -v "test_helpers.go" > coverage.txt || cp coverage_raw.txt coverage.txt
 
       - name: Calculate coverage percentage
         id: coverage
         run: |
           COVERAGE_PCT=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}')
-          echo "Coverage percentage: $COVERAGE_PCT"
+          echo "Coverage percentage (excluding mocks): $COVERAGE_PCT"
           echo "coverage_percentage=$COVERAGE_PCT" >> $GITHUB_OUTPUT
           
           # Set pass/fail threshold
