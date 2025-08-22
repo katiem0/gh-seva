@@ -4,7 +4,10 @@ go 1.23.0
 
 require github.com/cli/go-gh/v2 v2.12.1
 
-require github.com/kr/pretty v0.3.1 // indirect
+require (
+	github.com/benbjohnson/clock v1.1.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

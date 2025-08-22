@@ -12,19 +12,50 @@ import (
 )
 
 func (g *APIGetter) CreateVariableList(filedata [][]string) []data.ImportedVariable {
-	// convert csv lines to array of structs
 	var variableList []data.ImportedVariable
-	var vars data.ImportedVariable
-	for _, each := range filedata[1:] {
-		vars.Level = each[0]
-		vars.Name = each[1]
-		vars.Value = each[2]
-		vars.Visibility = each[3]
-		vars.SelectedRepos = strings.Split(each[4], ";")
-		vars.SelectedReposIDs = strings.Split(each[5], ";")
 
-		variableList = append(variableList, vars)
+	if len(filedata) <= 1 {
+		zap.S().Warn("Empty variable data provided")
+		return variableList
 	}
+
+	for _, each := range filedata[1:] {
+		// Skip if we don't have at least name, level, and value
+		if len(each) < 3 {
+			zap.S().Warn("Skipping row with insufficient fields")
+			continue
+		}
+
+		variable := data.ImportedVariable{
+			Level: each[0],
+			Name:  each[1],
+			Value: each[2],
+		}
+
+		// Validate required fields
+		if variable.Name == "" {
+			zap.S().Warn("Skipping variable with empty name")
+			continue
+		}
+
+		// Handle optional fields
+		if len(each) > 3 {
+			variable.Visibility = each[3]
+		}
+
+		// Handle repository data
+		if len(each) > 4 {
+			variable.SelectedRepos = strings.Split(each[4], ";")
+		}
+
+		if len(each) > 5 {
+			variable.SelectedReposIDs = strings.Split(each[5], ";")
+		}
+
+		zap.S().Debugf("Processed variable: %s/%s", variable.Level, variable.Name)
+		variableList = append(variableList, variable)
+	}
+
 	return variableList
 }
 
@@ -66,14 +97,22 @@ func (g *APIGetter) CreateOrganizationVariable(owner string, data io.Reader) err
 
 	resp, err := g.restClient.Request("POST", url, data)
 	if err != nil {
-		log.Fatal(err)
+		zap.S().Errorf("Error making request to create organization variable: %v", err)
+		return fmt.Errorf("failed to create organization variable: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			zap.S().Errorf("Error closing response body: %v", err)
 		}
 	}()
-	return err
+
+	// Check response status code
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error: status=%d, body=%s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 func (g *APIGetter) CreateRepoVariable(owner string, repo string, data io.Reader) error {
@@ -92,15 +131,22 @@ func (g *APIGetter) CreateRepoVariable(owner string, repo string, data io.Reader
 }
 
 func CreateSelectedOrgVariableData(variable data.ImportedVariable) *data.CreateOrgVariable {
-	variableArray := make([]int, len(variable.SelectedReposIDs))
-	for i := range variableArray {
-		variableArray[i], _ = strconv.Atoi(variable.SelectedReposIDs[i])
+	var validIDs []int
+
+	for _, idStr := range variable.SelectedReposIDs {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			zap.S().Warnf("Invalid repository ID '%s' will be skipped", idStr)
+			continue
+		}
+		validIDs = append(validIDs, id)
 	}
+
 	s := data.CreateOrgVariable{
 		Name:             variable.Name,
 		Value:            variable.Value,
 		Visibility:       variable.Visibility,
-		SelectedReposIDs: variableArray,
+		SelectedReposIDs: validIDs,
 	}
 	return &s
 }
