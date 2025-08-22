@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -269,7 +270,7 @@ func runCmdExportTest(owner string, repos []string, cmdFlags *cmdFlags, g interf
 					"",
 					"RepoOnly",
 					singleRepo.Name,
-					"12345", // Use a hardcoded value for testing
+					strconv.Itoa(singleRepo.DatabaseId),
 				})
 				if err != nil {
 					return err

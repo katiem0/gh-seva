@@ -1,3 +1,6 @@
+//go:build !cover
+// +build !cover
+
 package utils
 
 import (
@@ -8,7 +11,6 @@ import (
 	"github.com/katiem0/gh-seva/internal/data"
 )
 
-// MockAPIGetter implements the Getter interface for testing
 type MockAPIGetter struct {
 	// Mocked responses
 	ReposResponse                  *data.ReposQuery
@@ -34,7 +36,6 @@ type MockAPIGetter struct {
 	ShouldReturnError              bool
 }
 
-// NewMockAPIGetter creates a new instance of MockAPIGetter
 func NewMockAPIGetter() *MockAPIGetter {
 	return &MockAPIGetter{}
 }

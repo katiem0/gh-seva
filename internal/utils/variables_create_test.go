@@ -298,11 +298,6 @@ type mockSourceAPIGetter struct {
 	ShouldReturnError  bool
 }
 
-type MockRESTClient struct {
-	StatusCode int
-	Response   []byte
-}
-
 func GetSourceOrganizationVariablesTest(owner string, g interface{}) ([]byte, error) {
 	// Cast the interface to our mock type
 	mockGetter, ok := g.(*mockSourceAPIGetter)
@@ -336,6 +331,11 @@ func (m *mockSourceAPIGetter) Request(method string, url string, body io.Reader)
 	return &mockResponse{Body: io.NopCloser(bytes.NewReader(m.VariablesData))}, nil
 }
 
+type MockRESTClient struct {
+	StatusCode int
+	Response   []byte
+}
+
 func (m MockRESTClient) Request(method string, url string, body io.Reader) (*http.Response, error) {
 	// Create a mock response with the configured status code
 	resp := &http.Response{
@@ -346,13 +346,21 @@ func (m MockRESTClient) Request(method string, url string, body io.Reader) (*htt
 	return resp, nil
 }
 
-func (m MockRESTClient) GraphQL(query string, variables map[string]interface{}, result interface{}) error {
-	return nil
+func (m MockRESTClient) Do(req *http.Request) (*http.Response, error) {
+	resp := &http.Response{
+		StatusCode: m.StatusCode,
+		Body:       io.NopCloser(bytes.NewReader(m.Response)),
+	}
+
+	return resp, nil
 }
 
-// BuildRequestURL implements the api.RESTClient interface
 func (m MockRESTClient) BuildRequestURL(path string) string {
 	return path
+}
+
+func (m MockRESTClient) GraphQL(query string, variables map[string]interface{}, result interface{}) error {
+	return nil
 }
 
 type mockResponse struct {

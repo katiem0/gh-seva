@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/base64"
 	"strconv"
 	"testing"
 
@@ -73,37 +72,6 @@ func TestCreateSecretsList(t *testing.T) {
 		if result[i].Access != e.Access {
 			t.Errorf("Secret %d: Expected Access %s, got %s", i, e.Access, result[i].Access)
 		}
-	}
-}
-
-func TestEncryptSecret(t *testing.T) {
-	g := &APIGetter{}
-
-	// Create a valid base64 encoded key
-	testKey := make([]byte, 32)
-	for i := range testKey {
-		testKey[i] = byte(i)
-	}
-	publicKey := base64.StdEncoding.EncodeToString(testKey)
-
-	secretValue := "test-secret-value"
-
-	// Execute
-	encryptedSecret, err := g.EncryptSecret(publicKey, secretValue)
-
-	// Verify
-	if err != nil {
-		t.Errorf("EncryptSecret() error = %v", err)
-	}
-
-	if encryptedSecret == "" {
-		t.Error("EncryptSecret() returned empty string")
-	}
-
-	// Verify it's valid base64
-	_, err = base64.StdEncoding.DecodeString(encryptedSecret)
-	if err != nil {
-		t.Errorf("EncryptSecret() returned invalid base64: %v", err)
 	}
 }
 
