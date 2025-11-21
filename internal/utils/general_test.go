@@ -234,7 +234,7 @@ func (c *customRepoMockGetter) GetRepo(owner string, name string) (*data.RepoSin
 	c.captureName = name
 
 	if c.returnErr {
-		return nil, fmt.Errorf(c.errMessage)
+		return nil, fmt.Errorf("%s", c.errMessage)
 	}
 	return c.repoData, nil
 }

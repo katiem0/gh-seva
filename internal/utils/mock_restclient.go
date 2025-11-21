@@ -318,7 +318,7 @@ type errorMockAPIGetter struct {
 }
 
 func (e *errorMockAPIGetter) GetOrgActionSecrets(owner string) ([]byte, error) {
-	return nil, fmt.Errorf(e.ErrorMessage)
+	return nil, fmt.Errorf("%s", e.ErrorMessage)
 }
 
 type secretCreateErrorMockAPIGetter struct {
